@@ -1,57 +1,72 @@
+
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import jwtDecode from 'jwt-decode';
 
 const AuthContext = createContext();
 
-const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const res = await axios.get('/api/dashboard', {
-          headers: { 'x-auth-token': token }
-        });
-        setUser(res.data.user);
-      } catch (err) {
-        console.error(err);
-        localStorage.removeItem('token');
-      }
-      setLoading(false);
-    };
-    
-    loadUser();
+    const token = localStorage.getItem('token');
+    if (token) {
+      setAuthToken(token);
+      const decoded = jwtDecode(token);
+      setUser(decoded.user);
+      setIsAuthenticated(true);
+    }
+    setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    const res = await axios.post('/api/auth/login', { email, password });
-    localStorage.setItem('token', res.data.token);
-    setUser(res.data.user);
+  const setAuthToken = token => {
+    if (token) {
+      axios.defaults.headers.common['x-auth-token'] = token;
+      localStorage.setItem('token', token);
+    } else {
+      delete axios.defaults.headers.common['x-auth-token'];
+      localStorage.removeItem('token');
+    }
   };
 
-  const register = async (name, email, password) => {
-    const res = await axios.post('/api/auth/register', { name, email, password });
-    localStorage.setItem('token', res.data.token);
-    setUser(res.data.user);
+  const register = async formData => {
+    const res = await axios.post('/api/auth/register', formData);
+    setAuthToken(res.data.token);
+    const decoded = jwtDecode(res.data.token);
+    setUser(decoded.user);
+    setIsAuthenticated(true);
+  };
+
+  const login = async formData => {
+    const res = await axios.post('/api/auth/login', formData);
+    setAuthToken(res.data.token);
+    const decoded = jwtDecode(res.data.token);
+    setUser(decoded.user);
+    setIsAuthenticated(true);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    setAuthToken(null);
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {!loading && children}
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        loading,
+        register,
+        login,
+        logout
+      }}
+    >
+      {children}
     </AuthContext.Provider>
   );
 };
 
-export { AuthContext, AuthProvider };
+export default AuthContext;
