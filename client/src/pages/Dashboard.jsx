@@ -57,17 +57,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="mt-8">
-            <h3 className="text-lg font-medium mb-4">Recent Traffic Reports</h3>
-            <div className="bg-gray-100 p-4 rounded-lg">
-              <p className="text-gray-600 text-center">
-                Traffic reporting feature coming soon!
-              </p>
-              <div className="mt-4 flex justify-center">
-                <button className="px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary">
-                  Report Incident
-                </button>
-              </div>
+          
             </div>
           </div>
         </div>
